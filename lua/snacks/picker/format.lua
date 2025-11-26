@@ -404,6 +404,79 @@ function M.text(item, picker)
   return ret
 end
 
+function M.tmux(item)
+  local a = Snacks.picker.util.align
+  local active_window_icons = {
+    top = "󰁞",
+    bottom = "󰁆",
+    left = "󰁎",
+    right = "󰁕",
+    ["top-left"] = "󰧄",
+    ["top-right"] = "󰧆",
+    ["bottom-left"] = "󰦸",
+    ["bottom-right"] = "󰦺",
+    none = "",
+  }
+  local inactive_window_icons = {
+    top = "󰧇",
+    bottom = "󰦿",
+    left = "󰧀",
+    right = "󰧂",
+    ["top-left"] = "󰧃",
+    ["top-right"] = "󰧅",
+    ["bottom-left"] = "󰦷",
+    ["bottom-right"] = "󰦹",
+    none = "",
+  }
+  local ret = {} ---@type snacks.picker.Highlight[]
+  if item.position then
+    ret[#ret + 1] = {
+      a((item.window_active and active_window_icons or inactive_window_icons)[item.position], 2),
+      "SnacksPickerIcon",
+    }
+  end
+  if item.session_name then
+    ret[#ret + 1] = { a(item.session_name, 8, { truncate = true, align = "right" }), "SnacksPickerIdx" }
+    if item.window_index then
+      ret[#ret + 1] = { " :", "SnacksPickerDelim" }
+      ret[#ret + 1] = { a(item.window_index, 3, { align = "center" }), "SnacksPickerIdx" }
+      if item.pane_index then
+        ret[#ret + 1] = { ". ", "SnacksPickerDelim" }
+        ret[#ret + 1] = { a(item.pane_index, 3), "SnacksPickerIdx" }
+      end
+    end
+  end
+  if item.window_panes then
+    ret[#ret + 1] = {
+      a(item.window_panes .. " pane" .. (tonumber(item.window_panes) > 1 and "s" or " "), 10, { align = "right" }),
+      "SnacksPickerDesc",
+    }
+  end
+  if item.session_windows then
+    ret[#ret + 1] = {
+      a(
+        item.session_windows .. " window" .. (tonumber(item.session_windows) > 1 and "s" or " "),
+        12,
+        { align = "right" }
+      ),
+      "SnacksPickerDesc",
+    }
+  end
+  if item.current_command then
+    ret[#ret + 1] = { "  " .. item.current_command, "SnacksPickerCmd" }
+  end
+  if item.window_name then
+    ret[#ret + 1] = { "  " .. item.window_name, "SnacksPickerCmd" }
+  end
+  if (item.pane_id and item.pane_active) or (item.window_id and item.window_active) then
+    ret[#ret + 1] = { " (active)", "SnacksPickerComment" }
+  end
+  if item.session_attached and (tonumber(item.session_attached) > 0) then
+    ret[#ret + 1] = { " (attached)", "SnacksPickerComment" }
+  end
+  return ret
+end
+
 function M.command(item)
   local ret = {} ---@type snacks.picker.Highlight[]
   ret[#ret + 1] = { item.cmd, "SnacksPickerCmd" .. (item.cmd:find("^[a-z]") and "Builtin" or "") }
