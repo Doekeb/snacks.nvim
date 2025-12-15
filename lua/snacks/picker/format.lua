@@ -404,7 +404,7 @@ function M.text(item, picker)
   return ret
 end
 
-function M.tmux(item)
+function M.tmux(item, picker)
   local a = Snacks.picker.util.align
   local active_window_icons = {
     top = "󰁞",
@@ -429,51 +429,80 @@ function M.tmux(item)
     none = "",
   }
   local ret = {} ---@type snacks.picker.Highlight[]
-  if item.position then
-    ret[#ret + 1] = {
-      a((item.window_active and active_window_icons or inactive_window_icons)[item.position], 2),
-      "SnacksPickerIcon",
-    }
+  local element
+
+  element = item.position and (item.window_active and active_window_icons or inactive_window_icons)[item.position]
+    or (item.tree and "")
+  if element then
+    ret[#ret + 1] = { a(element, 2), "SnacksPickerTmuxIcon" }
   end
-  if item.session_name then
-    ret[#ret + 1] = { a(item.session_name, 8, { truncate = true, align = "right" }), "SnacksPickerIdx" }
-    if item.window_index then
-      ret[#ret + 1] = { " :", "SnacksPickerDelim" }
-      ret[#ret + 1] = { a(item.window_index, 3, { align = "center" }), "SnacksPickerIdx" }
-      if item.pane_index then
-        ret[#ret + 1] = { ". ", "SnacksPickerDelim" }
-        ret[#ret + 1] = { a(item.pane_index, 3), "SnacksPickerIdx" }
+
+  if item.type == "client" and item.client_name then
+    ret[#ret + 1] = { a(item.client_name, 12), "SnacksPickerTmuxId" }
+  end
+
+  if item.tree then
+    vim.list_extend(ret, M.tree(item, picker))
+    if item.type == "session" and item.session_name then
+      ret[#ret + 1] = { a(item.session_name .. ":", 9, { truncate = true }), "SnacksPickerTmuxAddr" }
+    elseif item.type == "window" and item.window_index then
+      ret[#ret + 1] = { a(tostring(item.window_index) .. ".", 7, { truncate = true }), "SnacksPickerTmuxAddr" }
+    elseif item.type == "pane" and item.pane_index then
+      ret[#ret + 1] = { a(tostring(item.pane_index), 5, { truncate = true }), "SnacksPickerTmuxAddr" }
+    end
+  else
+    if item.session_name then
+      ret[#ret + 1] = { a(item.session_name, 8, { truncate = true, align = "right" }), "SnacksPickerTmuxAddr" }
+      ret[#ret + 1] = { " :", "SnacksPickerTmuxDelim" }
+      if item.window_index and item.window_index >= 0 then
+        ret[#ret + 1] = { a(tostring(item.window_index), 3, { align = "center" }), "SnacksPickerTmuxAddr" }
+        ret[#ret + 1] = { ". ", "SnacksPickerTmuxDelim" }
+        if item.pane_index and item.pane_index >= 0 then
+          ret[#ret + 1] = { a(tostring(item.pane_index), 3), "SnacksPickerTmuxAddr" }
+        end
+      else
+        ret[#ret + 1] = { " ", "SnacksPickerTmuxDelim" }
       end
     end
   end
-  if item.window_panes then
-    ret[#ret + 1] = {
-      a(item.window_panes .. " pane" .. (tonumber(item.window_panes) > 1 and "s" or " "), 10, { align = "right" }),
-      "SnacksPickerDesc",
-    }
+
+  element = item.current_command or item.window_name or (item.tree and "")
+  if element then
+    ret[#ret + 1] = { a(element, 8, { truncate = true }), "SnacksPickerTmuxName" }
   end
-  if item.session_windows then
-    ret[#ret + 1] = {
-      a(
-        item.session_windows .. " window" .. (tonumber(item.session_windows) > 1 and "s" or " "),
-        12,
-        { align = "right" }
-      ),
-      "SnacksPickerDesc",
-    }
+
+  if item.type and item[item.type .. "_id"] then
+    ret[#ret + 1] = { a(item[item.type .. "_id"], 4), "SnacksPickerTmuxId" }
   end
-  if item.current_command then
-    ret[#ret + 1] = { "  " .. item.current_command, "SnacksPickerCmd" }
+
+  element = nil
+  if item.type == "session" and item.session_windows then
+    element = tostring(item.session_windows) .. " window" .. (item.session_windows == 1 and " " or "s")
+  elseif item.type == "window" and item.window_panes then
+    element = tostring(item.window_panes) .. " pane" .. (item.window_panes == 1 and " " or "s")
+  elseif item.tree then
+    element = ""
   end
-  if item.window_name then
-    ret[#ret + 1] = { "  " .. item.window_name, "SnacksPickerCmd" }
+  if element then
+    ret[#ret + 1] = { a(element, 11), "SnacksPickerTmuxExtra" }
   end
-  if (item.pane_id and item.pane_active) or (item.window_id and item.window_active) then
-    ret[#ret + 1] = { " (active)", "SnacksPickerComment" }
+
+  element = nil
+  if item.type == "session" and item.session_attached then
+    element = tostring(item.session_attached) .. " client" .. (item.session_attached == 1 and " " or "s")
+  elseif (item.type == "pane" and item.pane_active) or (item.type == "window" and item.window_active) then
+    element = "active"
+  elseif item.tree then
+    element = ""
   end
-  if item.session_attached and (tonumber(item.session_attached) > 0) then
-    ret[#ret + 1] = { " (attached)", "SnacksPickerComment" }
+  if element then
+    ret[#ret + 1] = { a(element, 11), "SnacksPickerTmuxActivity" }
   end
+
+  if item.client_user then
+    ret[#ret + 1] = { a("<" .. item.client_user .. ">", 12), "SnacksPickerTmuxUser" }
+  end
+
   return ret
 end
 

@@ -1024,19 +1024,36 @@ M.tags = {
   format = "lsp_symbol",
 }
 
+M.tmux = {
+  finder = "tmux_tree",
+  sort = { fields = { "session_name", "window_index", "pane_index" } },
+  format = "tmux",
+  preview = "tmux",
+  matcher = { sort_empty = true },
+  confirm = "tmux_select",
+}
+
+-- Search tmux clients
+M.tmux_clients = {
+  finder = "tmux_clients",
+  format = "tmux",
+  preview = "tmux",
+  confirm = "tmux_select",
+}
+
 -- Search tmux panes
 M.tmux_panes = {
   finder = "tmux_panes",
   format = "tmux",
-  preview = "tmux_pane",
+  preview = "tmux",
   confirm = "tmux_select",
 }
---
+
 -- Search tmux sessions
 M.tmux_sessions = {
   finder = "tmux_sessions",
   format = "tmux",
-  preview = "none",
+  preview = "tmux",
   confirm = "tmux_select",
 }
 
@@ -1044,7 +1061,7 @@ M.tmux_sessions = {
 M.tmux_windows = {
   finder = "tmux_windows",
   format = "tmux",
-  preview = "none",
+  preview = "tmux",
   confirm = "tmux_select",
 }
 
